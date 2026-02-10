@@ -3,30 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Sale;
 use App\Models\SaleDetail;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
 {
-    // GET /sales
+    /**
+     * GET /sales
+     */
     public function index()
     {
-        return Sale::with(['details.product', 'payment', 'user'])->get();
+        $data = Sale::with([
+            'details.product',
+            'payment',
+            'user'
+        ])->orderByDesc('sale_id')->get();
+
+        return response()->json($data);
     }
 
-    // GET /sales/{id}
+    /**
+     * GET /sales/{id}
+     */
     public function show($id)
     {
-        return Sale::with(['details.product', 'payment', 'user'])
-            ->where('sale_id', $id)
-            ->firstOrFail();
+        $data = Sale::with([
+            'details.product',
+            'payment',
+            'user'
+        ])->where('sale_id', $id)->firstOrFail();
+
+        return response()->json($data);
     }
 
-    // CREATE sale from cart
+    /**
+     * POST /sales
+     * Create sale from cart
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -38,58 +53,94 @@ class SaleController extends Controller
             ->where('status', 'open')
             ->firstOrFail();
 
-        if($cart->items->isEmpty()) {
-            return response()->json(['message'=>'Cart is empty'], 400);
+        if ($cart->items->isEmpty()) {
+            return response()->json([
+                'message' => 'Cart is empty'
+            ], 400);
         }
 
-        // Start transaction
         DB::beginTransaction();
-        try {
-            $total = $cart->items->sum(fn($item) => $item->subtotal);
 
-            // create sale
+        try {
+            // calculate total
+            $total = $cart->items->sum(function ($item) {
+                return $item->subtotal;
+            });
+
+            // create sale (INVOICE)
             $sale = Sale::create([
-                'cart_id' => $cart->cart_id,
-                'user_id' => $cart->user_id,
+                'cart_id'      => $cart->cart_id,
+                'user_id'      => $cart->user_id,
                 'total_amount' => $total,
-                'sale_date' => now()
+                'status'       => 'pending',
+                'sale_date'    => now(),
             ]);
 
             // create sale details
-            foreach($cart->items as $item){
+            foreach ($cart->items as $item) {
+
                 SaleDetail::create([
-                    'sale_id' => $sale->sale_id,
+                    'sale_id'    => $sale->sale_id,
                     'product_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'subtotal' => $item->subtotal
+                    'quantity'   => $item->quantity,
+                    'price'      => $item->price,
+                    'subtotal'   => $item->subtotal,
                 ]);
 
-                // optional: update product stock
+                // update product stock
                 $item->product->decrement('stock_qty', $item->quantity);
             }
 
             // close cart
-            $cart->update(['status'=>'checked_out']);
+            $cart->update([
+                'status' => 'checked_out'
+            ]);
 
             DB::commit();
-            return response()->json($sale->load('details.product'), 201);
 
-        } catch (\Exception $e){
+            return response()->json(
+                $sale->load('details.product'),
+                201
+            );
+
+        } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message'=>$e->getMessage()], 500);
+
+            return response()->json([
+                'message' => 'Failed to create sale',
+                'error'   => $e->getMessage()
+            ], 500);
         }
     }
 
-    // DELETE /sales/{id} (optional)
+    /**
+     * DELETE /sales/{id}
+     */
     public function destroy($id)
     {
-        $sale = Sale::findOrFail($id);
-        $sale->details()->delete();
-        $sale->payment()->delete();
-        $sale->delete();
+        $sale = Sale::with('details', 'payment')->findOrFail($id);
 
-        return response()->json(['message'=>'Sale deleted']);
+        // ❌ do not allow delete paid sale
+        if ($sale->status === 'paid') {
+            return response()->json([
+                'message' => 'Cannot delete a paid sale'
+            ], 403);
+        }
+
+        DB::transaction(function () use ($sale) {
+
+            // restore stock (optional but recommended)
+            foreach ($sale->details as $detail) {
+                $detail->product->increment('stock_qty', $detail->quantity);
+            }
+
+            $sale->details()->delete();
+            $sale->payment()->delete();
+            $sale->delete();
+        });
+
+        return response()->json([
+            'message' => 'Sale deleted successfully'
+        ]);
     }
 }
-

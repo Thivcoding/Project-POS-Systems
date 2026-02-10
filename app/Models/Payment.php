@@ -13,14 +13,19 @@ class Payment extends Model
 
     protected $fillable = [
         'sale_id',
-        'payment_method',
+        'method',        
+        'status',          
+        'amount',         
         'paid_amount',
         'change_amount',
-        'payment_date'
+        'currency',
+        'qr_string',
+        'bakong_txn_id',
+        'payment_date',
     ];
 
     protected $casts = [
-        'payment_date' => 'datetime'
+        'payment_date' => 'datetime',
     ];
 
     public function sale()

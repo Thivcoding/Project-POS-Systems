@@ -15,6 +15,7 @@ class Sale extends Model
         'cart_id',
         'user_id',
         'total_amount',
+        'status', 
         'sale_date'
     ];
 

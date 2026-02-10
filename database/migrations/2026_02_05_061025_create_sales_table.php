@@ -16,7 +16,9 @@ return new class extends Migration
             $table->unsignedBigInteger('cart_id')->unique();
             $table->unsignedBigInteger('user_id');
             $table->decimal('total_amount',12,2);
-            $table->timestamp('sale_date');
+            $table->enum('status', ['pending','partial','paid','cancelled'])
+                ->default('pending');
+            $table->timestamp('sale_date')->useCurrent();
             $table->timestamps();
 
             $table->foreign('cart_id')
