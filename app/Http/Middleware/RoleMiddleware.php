@@ -13,14 +13,15 @@ class RoleMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, $role): Response
     {
-        if (!$request->user() || $request->user()->role !== 'admin') {
+        if (!$request->user() || $request->user()->role !== $role) {
             return response()->json([
-                'message' => 'Unauthorized (Admin only)'
+                'message' => 'Unauthorized (Role: ' . $role . ')'
             ], 403);
         }
-        
+
         return $next($request);
     }
+
 }
