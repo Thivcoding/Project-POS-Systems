@@ -24,6 +24,7 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'price'        => 'required|numeric',
             'stock_qty'    => 'required|integer',
+            'size'         => 'required|string|in:Small,Medium,Large', // Added size validation
             'image'        => 'required|image|max:2048'
         ]);
 
@@ -39,6 +40,7 @@ class ProductController extends Controller
             'product_name' => $request->product_name,
             'price'        => $request->price,
             'stock_qty'    => $request->stock_qty,
+            'size'         => $request->size, // Save size
             'image'        => $upload->getSecurePath(),
             'image_id'     => $upload->getPublicId(),
             'status'       => 'active'
@@ -66,12 +68,12 @@ class ProductController extends Controller
             'product_name'=> 'required|string|max:255',
             'price'       => 'required|numeric',
             'stock_qty'   => 'required|integer',
+            'size'        => 'required|string|in:Small,Medium,Large', // Added size validation
             'image'       => 'nullable|image|max:2048'
         ]);
 
         // update image (if exists)
         if ($request->hasFile('image')) {
-
             // delete old image
             if ($product->image_id) {
                 cloudinary()->destroy($product->image_id);
@@ -91,7 +93,8 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'product_name'=> $request->product_name,
             'price'       => $request->price,
-            'stock_qty'   => $request->stock_qty
+            'stock_qty'   => $request->stock_qty,
+            'size'        => $request->size, // Save size
         ]);
 
         return response()->json([
