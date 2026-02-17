@@ -15,9 +15,6 @@ class Product extends Model
         'category_id',
         'product_code',
         'product_name',
-        'price',
-        'size',
-        'stock_qty',
         'image',
         'image_id', 
         'status'
@@ -26,6 +23,21 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    
+    // 1 Product → Many ProductSizes
+    public function productSizes()
+    {
+        return $this->hasMany(ProductSize::class, 'product_id', 'product_id');
+    }
+
+    // Optional: Direct access to Size through pivot
+    public function sizes()
+    {
+        return $this->belongsToMany(Size::class, 'product_sizes', 'product_id', 'size_id')
+                    ->withPivot('price', 'stock_qty')
+                    ->withTimestamps();
     }
 
     public function cartItems()

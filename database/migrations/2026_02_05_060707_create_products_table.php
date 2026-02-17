@@ -15,9 +15,6 @@ return new class extends Migration
             $table->unsignedBigInteger('category_id');
             $table->string('product_code')->unique();
             $table->string('product_name');
-            $table->decimal('price',10,2);
-            $table->string('size')->nullable();
-            $table->integer('stock_qty');
             $table->string('image')->nullable();
             $table->string('image_id')->nullable();
             $table->enum('status',['active','inactive'])->default('active');
