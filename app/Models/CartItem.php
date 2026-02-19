@@ -14,6 +14,7 @@ class CartItem extends Model
     protected $fillable = [
         'cart_id',
         'product_id',
+        'size_id',     // ✅ Add size_id here
         'quantity',
         'price',
         'subtotal'
@@ -29,4 +30,8 @@ class CartItem extends Model
         return $this->belongsTo(Product::class, 'product_id');
     }
 
+    public function size()
+    {
+        return $this->belongsTo(Size::class, 'size_id'); // ✅ Optional: relationship to size
+    }
 }

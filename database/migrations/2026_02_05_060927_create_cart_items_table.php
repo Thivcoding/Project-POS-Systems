@@ -15,11 +15,13 @@ return new class extends Migration
             $table->id('cart_item_id');
             $table->unsignedBigInteger('cart_id');
             $table->unsignedBigInteger('product_id');
-            $table->integer('quantity');
-            $table->decimal('price',10,2);
-            $table->decimal('subtotal',10,2);
+            $table->unsignedBigInteger('size_id'); // ✅ add size_id
+            $table->integer('quantity')->default(1);
+            $table->decimal('price', 10, 2);      // price of selected size
+            $table->decimal('subtotal', 10, 2);   // quantity * price
             $table->timestamps();
 
+            // Foreign keys
             $table->foreign('cart_id')
                 ->references('cart_id')->on('carts')
                 ->onDelete('cascade');
@@ -28,10 +30,13 @@ return new class extends Migration
                 ->references('product_id')->on('products')
                 ->onDelete('cascade');
 
-            // prevent duplicate product in same cart
-            $table->unique(['cart_id','product_id']);
-        });
+            $table->foreign('size_id')
+                ->references('id')->on('sizes')
+                ->onDelete('cascade');
 
+            // ✅ prevent duplicate product with same size in same cart
+            $table->unique(['cart_id', 'product_id', 'size_id']);
+        });
     }
 
     /**
@@ -42,3 +47,4 @@ return new class extends Migration
         Schema::dropIfExists('cart_items');
     }
 };
+

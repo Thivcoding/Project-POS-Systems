@@ -2,26 +2,38 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
 class CartItemController extends Controller
 {
-    // POST /cart-items
+    // ADD ITEM TO CART
     public function store(Request $request)
     {
         $request->validate([
             'cart_id' => 'required|exists:carts,cart_id',
             'product_id' => 'required|exists:products,product_id',
-            'quantity' => 'required|integer|min:1'
+            'size_id' => 'required|exists:sizes,id',
+            'quantity' => 'required|integer|min:1',
         ]);
 
+        // Get product size info
         $product = Product::findOrFail($request->product_id);
+        $productSize = $product->sizes()->where('size_id', $request->size_id)->first();
 
+        if (!$productSize) {
+            return response()->json([
+                'message' => 'Invalid product size'
+            ], 422);
+        }
+
+        $price = $productSize->pivot->price;
+
+        // Check if item already exists in cart
         $item = CartItem::where('cart_id', $request->cart_id)
             ->where('product_id', $request->product_id)
+            ->where('size_id', $request->size_id)
             ->first();
 
         if ($item) {
@@ -30,34 +42,35 @@ class CartItemController extends Controller
             $item = new CartItem([
                 'cart_id' => $request->cart_id,
                 'product_id' => $request->product_id,
-                'price' => $product->price
+                'size_id' => $request->size_id,
+                'price' => $price,
+                'quantity' => $request->quantity
             ]);
-            $item->quantity = $request->quantity;
         }
 
-        $item->subtotal = $item->quantity * $item->price;
+        $item->subtotal = $item->quantity * $price;
         $item->save();
 
         return response()->json($item, 201);
     }
 
-    // PUT /cart-items/{id}
+    // UPDATE CART ITEM
     public function update(Request $request, $id)
     {
         $request->validate([
-            'quantity' => 'required|integer|min:1'
+            'quantity' => 'required|integer|min:1',
         ]);
 
         $item = CartItem::findOrFail($id);
-        $item->update([
-            'quantity' => $request->quantity,
-            'subtotal' => $request->quantity * $item->price
-        ]);
+
+        $item->quantity = $request->quantity;
+        $item->subtotal = $request->quantity * $item->price;
+        $item->save();
 
         return response()->json($item);
     }
 
-    // DELETE /cart-items/{id}
+    // DELETE CART ITEM
     public function destroy($id)
     {
         CartItem::findOrFail($id)->delete();
@@ -67,4 +80,3 @@ class CartItemController extends Controller
         ]);
     }
 }
-

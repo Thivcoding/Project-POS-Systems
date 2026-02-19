@@ -17,6 +17,9 @@ class AuthController extends Controller
             'username' => 'required|string',
             'email' => 'required|email',
             'password' => 'required|min:6',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
         ]);
 
         $data['password'] = Hash::make($data['password']);

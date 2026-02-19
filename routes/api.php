@@ -8,6 +8,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SizeController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -49,6 +50,10 @@ Route::middleware(['auth:api', 'role:cashier'])->prefix('cashier')->group(functi
 // ADMIN ROUTES
 // ----------------------
 Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function () {
+
+    // USER MANAGEMENT
+    Route::apiResource('users', UserController::class);
+
     // CATEGORY MANAGEMENT
     Route::apiResource('categories', CategoryController::class);
 

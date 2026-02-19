@@ -89,6 +89,7 @@ class ProductController extends Controller
     // PUT /api/admin/products/{id}
     public function update(Request $request, $id)
     {
+
         $product = Product::findOrFail($id);
 
         // Decode sizes JSON string if sent as form-data string
